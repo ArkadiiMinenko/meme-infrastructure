@@ -1,142 +1,142 @@
-🚀 Step 1 — Infrastructure Foundation
-Terraform × Proxmox × Reality Check
-Context
+# 🚀 Step 1 — Infrastructure Foundation  
+**Terraform × Proxmox × Reality Check**
 
-This project is a DevOps homelab built with one clear intention:
-to design infrastructure that behaves like production, not like a demo.
+---
 
-No managed services.
-No hidden automation.
+## Context
+
+This project is a DevOps homelab built with one clear intention:  
+to design infrastructure that behaves like **production**, not like a demo.
+
+No managed services.  
+No hidden automation.  
 Full control over virtualization, networking, and provisioning.
 
 Before touching Kubernetes, GitOps, or CI/CD, the foundation has to be solid.
 
 This step is about building that foundation.
 
-🎯 Goals of Step 1
+---
 
-Understand how Proxmox actually manages VM lifecycle
+## 🎯 Goals of Step 1
 
-Set up Terraform locally as the single source of truth for infrastructure
+- Understand how Proxmox actually manages VM lifecycle
+- Set up Terraform locally as the **single source of truth** for infrastructure
+- Eliminate manual VM creation and UI-driven configuration
+- Prepare a clean base for future Kubernetes nodes
 
-Eliminate manual VM creation and UI-driven configuration
+This step was less about speed —  
+and more about learning the platform’s edges.
 
-Prepare a clean base for future Kubernetes nodes
+---
 
-This step was less about speed — and more about learning the platform’s edges.
+## 🧱 What Was Built
 
-🧱 What Was Built
-Proxmox Side
+### Proxmox Side
 
-Imported an Ubuntu cloud-init image
-
-Converted it into a reusable VM template
+- Imported an Ubuntu **cloud-init** image
+- Converted it into a reusable **VM template**
 
 Verified:
+- disk layout and boot mode (SeaBIOS)
+- virtio storage and networking
+- cloud-init compatibility
 
-disk layout and boot mode (SeaBIOS)
+---
 
-virtio storage and networking
+### Terraform Side
 
-cloud-init compatibility
-
-Terraform Side
-
-Configured Terraform to control Proxmox via API
-
-Described VM configuration entirely in code:
-
-CPU and RAM limits
-
-static IPs via cloud-init
-
-SSH access using public keys
-
-Ensured infrastructure could be recreated from scratch at any time
+- Configured Terraform to control Proxmox via API
+- Described VM configuration entirely in code:
+  - CPU and RAM limits
+  - static IPs via cloud-init
+  - SSH access using public keys
+- Ensured infrastructure could be recreated from scratch at any time
 
 At this point, the goal was simple:
-👉 terraform apply should produce a usable VM — every time.
 
-⚠️ What Went Wrong (and Why It Mattered)
-1. Terraform Hanging on Still creating...
+> **`terraform apply` should produce a usable VM — every time.**
+
+---
+
+## ⚠️ What Went Wrong (and Why It Mattered)
+
+### 1. Terraform Hanging on `Still creating...`
 
 Terraform would wait indefinitely, even though the VM was already running.
 
-Why?
-Terraform relies on QEMU Guest Agent to receive the VM’s IP address and mark it as “ready”.
+**Why?**  
+Terraform relies on **QEMU Guest Agent** to receive the VM’s IP address and mark it as “ready”.
+
 No agent → no signal → Terraform waits forever.
 
-Fix:
+**Fix:**
+- Installed and enabled `qemu-guest-agent` in the template
+- Enabled agent support in Proxmox
 
-Installed and enabled qemu-guest-agent in the template
+---
 
-Enabled agent support in Proxmox
-
-2. PXE Boot Instead of Disk Boot
+### 2. PXE Boot Instead of Disk Boot
 
 Some VMs didn’t boot at all and dropped straight into PXE.
 
-Symptoms:
+**Symptoms:**
+- `Boot failed: could not read the boot disk`
+- Root disk attached as `unused0`
+- `scsi0` missing
+- cloud-init CDROM not connected
 
-Boot failed: could not read the boot disk
-
-Root disk attached as unused0
-
-scsi0 missing
-
-cloud-init CDROM not connected
-
-What actually happened:
+**What actually happened:**  
 The Terraform provider created the disk, but failed to attach it correctly.
-Result: a VM that exists, but cannot boot.
 
-Temporary fixes were possible via qm set, but…
+Result:  
+A VM that exists — but cannot boot.
 
-3. The Real Issue: Provider Instability
+Temporary fixes were possible via `qm set`, but…
+
+---
+
+### 3. The Real Issue: Provider Instability
 
 The initial Proxmox Terraform provider showed:
+- inconsistent VM definitions
+- provider crashes
+- partial resource creation
+- repeated manual intervention
 
-inconsistent VM definitions
+At this point, the problem was no longer configuration —  
+it was **tool reliability**.
 
-provider crashes
+---
 
-partial resource creation
-
-repeated manual intervention
-
-At this point, the problem was no longer configuration —
-it was tool reliability.
-
-🧠 Engineering Decision
+## 🧠 Engineering Decision
 
 Instead of stacking workarounds and post-create scripts, the decision was made to:
 
-Replace the provider.
+> **Replace the provider.**
 
-Sometimes the most correct solution is not a clever workaround,
+Sometimes the most correct solution is not a clever workaround,  
 but choosing a tool that behaves predictably.
 
 This immediately stabilized the provisioning process.
 
-✅ Outcome of Step 1
+---
 
-Terraform provisions Proxmox VMs reliably
+## ✅ Outcome of Step 1
 
-No manual fixes required after creation
+- Terraform provisions Proxmox VMs reliably
+- No manual fixes required after creation
+- VM state is fully reproducible from code
+- Infrastructure is ready for Kubernetes bootstrap
 
-VM state is fully reproducible from code
+Most importantly:  
+**the foundation is now trusted.**
 
-Infrastructure is ready for Kubernetes bootstrap
+---
 
-Most importantly:
-the foundation is now trusted.
+## 📌 Key Takeaways
 
-📌 Key Takeaways
-
-Infrastructure as Code does not hide platform behavior — it reveals it
-
-Minimal cloud images require deliberate preparation
-
-Terraform is only as reliable as the signals it receives
-
-Knowing when to switch tools is as important as knowing how to configure them
+- Infrastructure as Code does not hide platform behavior — it reveals it
+- Minimal cloud images require deliberate preparation
+- Terraform is only as reliable as the signals it receives
+- Knowing *when to switch tools* is as important as knowing how to configure them
