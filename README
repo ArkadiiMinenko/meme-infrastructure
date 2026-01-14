@@ -140,3 +140,144 @@ Most importantly:
 - Minimal cloud images require deliberate preparation
 - Terraform is only as reliable as the signals it receives
 - Knowing *when to switch tools* is as important as knowing how to configure them
+
+# 🚀 Step 2 — Configuration Management & Kubernetes Bootstrapping
+
+**Terraform × Ansible × Kubernetes (Zero-Touch Deployment)**
+
+---
+
+## Context
+
+After virtual machines were provisioned with Terraform, the infrastructure was still incomplete.
+
+Bare VMs are not a platform.
+
+This step focuses on **turning raw compute into a working Kubernetes cluster**,  
+without manual SSH access or node-by-node configuration.
+
+The goal is full automation from infrastructure provisioning  
+to a ready-to-use Kubernetes control plane.
+
+---
+
+## 🎯 Goals of Step 2
+
+- Automate OS preparation for Kubernetes nodes
+- Eliminate manual SSH access during cluster setup
+- Bootstrap a Kubernetes cluster using declarative configuration
+- Connect Terraform (infrastructure) and Ansible (configuration) into a single workflow
+- Achieve repeatable, zero-touch cluster deployment
+
+---
+
+## 🧱 What Was Built
+
+### Terraform ↔ Ansible Integration
+
+- Terraform dynamically generates `inventory.ini`
+- No hardcoded IP addresses
+- Nodes are automatically grouped into:
+  - `[master]`
+  - `[workers]`
+- Ansible becomes infrastructure-aware without manual updates
+
+Result:
+
+> Infrastructure changes automatically propagate into configuration management.
+
+---
+
+### OS Preparation (Ansible)
+
+A dedicated Ansible playbook prepares all nodes for Kubernetes:
+
+- Disabled SWAP (runtime and persistent)
+- Loaded required kernel modules:
+  - `overlay`
+  - `br_netfilter`
+- Configured `sysctl` parameters for Kubernetes networking
+- Installed and configured container runtime (`containerd`)
+- Installed Kubernetes components:
+  - `kubeadm`
+  - `kubelet`
+  - `kubectl`
+
+All steps are idempotent and safe to re-run.
+
+---
+
+### Kubernetes Cluster Bootstrapping
+
+Ansible automates the entire cluster lifecycle:
+
+- Initializes the Control Plane using `kubeadm`
+- Installs CNI networking (Flannel)
+- Generates and distributes the join token
+- Automatically joins Worker nodes to the cluster
+- Configures kubeconfig access for cluster management
+
+The cluster reaches a ready state without any manual intervention.
+
+---
+
+## ⚠️ What Went Wrong (and Why It Mattered)
+
+### 1. SSH Access Failing on a Single Node
+
+One node refused SSH connections with `Connection refused`,  
+while network connectivity (ping) was fully functional.
+
+**Initial assumption:**  
+Cloud-init or OS configuration issue.
+
+**Actual cause:**  
+IP address conflict inside the home network.
+
+The IP was already silently assigned to an IoT device.
+
+**Fix:**
+
+- Adjusted Terraform IP allocation logic
+- Moved Kubernetes nodes into a dedicated address range
+
+---
+
+### 2. Kubernetes Reset Artifacts
+
+After reinitializing the cluster, pods were stuck in `ContainerCreating`.
+
+**Root cause:**
+
+- Old CNI interfaces (`cni0`) persisted after `kubeadm reset`
+- Network conflicts prevented pod networking
+
+**Fix:**
+
+- Explicit cleanup of CNI interfaces before re-initialization
+- Ensured clean network state before cluster bootstrap
+
+---
+
+## 🧠 Engineering Decisions
+
+- Terraform handles **infrastructure**
+- Ansible handles **configuration**
+- No configuration logic inside Terraform
+- No infrastructure assumptions inside Ansible
+
+Each tool does one job — and does it well.
+
+---
+
+## ✅ Outcome of Step 2
+
+- Fully automated Kubernetes cluster provisioning
+- Zero manual SSH configuration
+- Infrastructure and configuration are fully reproducible
+- Cluster can be destroyed and recreated reliably
+
+```text
+terraform apply
+ansible-playbook
+→ Kubernetes cluster ready
