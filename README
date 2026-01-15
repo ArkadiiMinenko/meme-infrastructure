@@ -281,3 +281,60 @@ Each tool does one job — and does it well.
 terraform apply
 ansible-playbook
 → Kubernetes cluster ready
+
+---
+
+# 🧩 Step 3 — Platform Add-ons (Networking)
+
+At this stage, the Kubernetes cluster foundation is complete.
+Today the focus was not on building new infrastructure,
+but on **adding minimal platform services required for real traffic flow**.
+
+No new complexity — just the essentials.
+
+---
+
+## 🛠 What Was Added
+
+### MetalLB
+- Configured in **Layer 2 mode**
+- Provides a virtual IP address inside the local network
+- Enables LoadBalancer-type services in a bare-metal cluster
+
+Result:
+> Kubernetes services can now receive traffic from outside the cluster.
+
+---
+
+### Ingress NGINX
+- Installed as the cluster ingress controller
+- Handles HTTP routing based on hostnames
+- Acts as the single entry point for future applications
+
+Result:
+> External traffic → Ingress → Service → Pod
+
+---
+
+## 🔎 What Was Verified
+
+- LoadBalancer IP announced correctly via ARP
+- Traffic reaches the ingress controller
+- Host-based routing works as expected
+- Test application responds through NodePort / Ingress
+
+No manual port forwarding.  
+No SSH tunneling.
+
+---
+
+## 🏁 Outcome
+
+The cluster now has a **basic but production-like networking layer**:
+- External IP allocation
+- Central ingress point
+- Predictable traffic flow
+
+This is enough to start deploying **real applications**.
+
+---

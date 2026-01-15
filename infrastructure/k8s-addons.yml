@@ -1,0 +1,45 @@
+---
+- name: Install Kubernetes Addons (MetalLB & Ingress)
+  hosts: master
+  become: true
+  tasks:
+    - name: Enable strictARP in kube-proxy
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      shell: |
+        kubectl get configmap kube-proxy -n kube-system -o yaml | \
+        sed -e "s/strictARP: false/strictARP: true/" | \
+        kubectl apply -f - -n kube-system
+
+    - name: Install MetalLB Manifest
+      become: false
+      command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+      register: metallb_install
+      changed_when: "'created' in metallb_install.stdout"
+
+    - name: Wait for MetalLB controller to be ready
+      become: false
+      command: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb --timeout=90s
+      ignore_errors: yes
+
+    - name: Copy MetalLB Config to Master
+      copy:
+        src: metallb-config.yaml
+        dest: /home/ubuntu/metallb-config.yaml
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Apply MetalLB IP Pool Configuration
+      become: false
+      command: kubectl apply -f /home/ubuntu/metallb-config.yaml
+
+    - name: Install NGINX Ingress Controller
+      become: false
+      command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.5/deploy/static/provider/cloud/deploy.yaml
+      register: ingress_install
+      changed_when: "'created' in ingress_install.stdout"
+
+    - name: Wait for Ingress Controller to be ready
+      become: false
+      command: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
+      ignore_errors: yes
