@@ -1,6 +1,7 @@
-pika
 sqlalchemy
 psycopg2-binary
+pika
 boto3
-Pillow
+pillow
+python-dotenv
 requests
