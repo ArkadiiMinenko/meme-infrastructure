@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Generator PRO</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { width: 100%; max-width: 900px; background: #2d2d2d; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: #f39c12; text-align: center; margin-bottom: 30px; }
+        
+        .template-label { display: block; margin-bottom: 10px; color: #aaa; font-size: 1.1em; }
+        #template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .template-thumb { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 4px solid transparent; transition: 0.2s; opacity: 0.7; }
+        .template-thumb:hover { opacity: 1; }
+        .template-thumb.selected { border-color: #f39c12; opacity: 1; transform: scale(1.05); }
+
+        .control-group { margin-bottom: 20px; background: #383838; padding: 15px; border-radius: 8px; border-left: 5px solid #f39c12; }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9em; }
+        
+        input, select { background: #444; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
+
+        button { border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; }
+        .btn-add { background: #2980b9; color: white; margin-bottom: 20px; }
+        .btn-add:hover { background: #3498db; }
+        .btn-gen { background: #27ae60; color: white; font-size: 1.2em; }
+        .btn-gen:hover { background: #2ecc71; }
+        .btn-del { background: #c0392b; color: white; width: auto; padding: 0 15px; }
+
+        #result-area { margin-top: 30px; text-align: center; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed #444; border-radius: 10px; background: #222; }
+        .result-img { max-width: 100%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        
+        .loader { border: 5px solid #333; border-top: 5px solid #f39c12; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; display: none; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 Meme Generator PRO</h1>
+
+    <div>
+        <span class="template-label">Select Template:</span>
+        <div id="template-grid">
+            <p style="color: #aaa;">Loading templates...</p>
+        </div>
+    </div>
+
+    <div id="lines-container"></div>
+
+    <button class="btn-add" onclick="addLine()">+ Add Text Line</button>
+    
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <input type="checkbox" id="textBorder" checked style="width: auto;">
+        <label for="textBorder" style="margin: 0; cursor: pointer;">Black Text Border</label>
+    </div>
+
+    <button class="btn-gen" onclick="generateMeme()">GENERATE MEME</button>
+
+    <div id="result-area">
+        <div class="loader" id="loader"></div>
+        <p id="statusText" style="color: #777;">Result will appear here</p>
+        <img id="resultImage" class="result-img" style="display: none;">
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://127.0.0.1:8000";
+    let selectedTemplateKey = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTemplates();
+        addLine("TOP TEXT", 30, 60, "white");
+        addLine("BOTTOM TEXT", 450, 60, "white");
+    });
+
+    async function loadTemplates() {
+        const grid = document.getElementById('template-grid');
+        try {
+            const res = await fetch(`${API_URL}/templates`);
+            const templates = await res.json();
+            grid.innerHTML = '';
+
+            let isFirst = true;
+            for (const [key, url] of Object.entries(templates)) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'template-thumb';
+                img.dataset.key = key;
+                
+                img.onclick = () => selectTemplate(key, img);
+
+                if (isFirst) {
+                    selectTemplate(key, img);
+                    isFirst = false;
+                }
+                grid.appendChild(img);
+            }
+        } catch (e) {
+            grid.innerHTML = '<p style="color: red;">Error loading templates. Check API.</p>';
+        }
+    }
+
+    function selectTemplate(key, imgElement) {
+        selectedTemplateKey = key;
+        document.querySelectorAll('.template-thumb').forEach(el => el.classList.remove('selected'));
+        imgElement.classList.add('selected');
+    }
+
+    function addLine(text = "", y = 100, size = 50, color = "white") {
+        const container = document.getElementById('lines-container');
+        const div = document.createElement('div');
+        div.className = 'control-group';
+        div.innerHTML = `
+            <div class="row">
+                <div class="col" style="flex: 3;">
+                    <label>Text:</label>
+                    <input type="text" class="input-text" value="${text}" placeholder="Text...">
+                </div>
+                <div class="col">
+                    <button class="btn-del" onclick="this.parentElement.parentElement.parentElement.remove()">❌</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <label>Position Y (0-600):</label>
+                    <input type="number" class="input-y" value="${y}">
+                </div>
+                <div class="col">
+                    <label>Size:</label>
+                    <input type="number" class="input-size" value="${size}">
+                </div>
+                <div class="col">
+                    <label>Color:</label>
+                    <select class="input-color">
+                        <option value="white" ${color === 'white' ? 'selected' : ''}>White</option>
+                        <option value="black" ${color === 'black' ? 'selected' : ''}>Black</option>
+                        <option value="red" ${color === 'red' ? 'selected' : ''}>Red</option>
+                        <option value="yellow" ${color === 'yellow' ? 'selected' : ''}>Yellow</option>
+                        <option value="blue" ${color === 'blue' ? 'selected' : ''}>Blue</option>
+                        <option value="green" ${color === 'green' ? 'selected' : ''}>Green</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    async function generateMeme() {
+        if (!selectedTemplateKey) {
+            alert("Please select a template!");
+            return;
+        }
+        const textBorder = document.getElementById('textBorder').checked;
+        
+        const lines = [];
+        document.querySelectorAll('#lines-container .control-group').forEach(group => {
+            lines.push({
+                text: group.querySelector('.input-text').value,
+                y_pos: parseInt(group.querySelector('.input-y').value),
+                size: parseInt(group.querySelector('.input-size').value),
+                color: group.querySelector('.input-color').value
+            });
+        });
+
+        const img = document.getElementById('resultImage');
+        const loader = document.getElementById('loader');
+        const status = document.getElementById('statusText');
+        
+        img.style.display = 'none';
+        loader.style.display = 'block';
+        status.innerText = "Sending task...";
+        status.style.display = 'block';
+
+        try {
+            const response = await fetch(`${API_URL}/memes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    template: selectedTemplateKey,
+                    text_border: textBorder,
+                    text_lines: lines
+                })
+            });
+
+            if (!response.ok) throw new Error("API Error");
+            const data = await response.json();
+            const taskId = data.task_id;
+            
+            status.innerText = "Processing...";
+
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/memes/${taskId}`);
+                    const check = await res.json();
+
+                    if (check.status === 'Done') {
+                        clearInterval(interval);
+                        loader.style.display = 'none';
+                        status.style.display = 'none';
+                        img.src = check.url;
+                        img.style.display = 'block';
+                    } else if (check.status === 'Failed') {
+                        clearInterval(interval);
+                        status.innerText = "Generation failed :(";
+                        loader.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 1000);
+
+        } catch (e) {
+            alert(e.message);
+            loader.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
