@@ -12,3 +12,21 @@ crash.log.*
 
 *.pem
 .vscode/
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+venv/
+.venv/
+env/
+.env
+
+.idea/
+.vscode/
+*.swp
+
+*.log
+
+memes_out/
+source-code/memes_out/
