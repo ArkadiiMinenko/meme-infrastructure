@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: app-config
   namespace: meme-app
+
 data:
   POSTGRES_HOST: "postgres"
   RABBITMQ_HOST: "rabbitmq"
