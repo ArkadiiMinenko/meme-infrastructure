@@ -2,7 +2,7 @@ name: Build and Deploy to K8s
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'source-code/**'
       - '.github/workflows/**'
