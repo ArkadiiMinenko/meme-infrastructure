@@ -3,11 +3,11 @@ import random
 import concurrent.futures
 import time
 
-LOCAL_API_URL = "http://localhost:8000"
+LOCAL_API_URL = "http://api.meme.local"
 EXTERNAL_API_URL = "https://official-joke-api.appspot.com/random_joke"
 
-TOTAL_REQUESTS = 70
-CONCURRENT_USERS = 10
+CONCURRENT_USERS = 20
+TEST_DURATION = 300
 
 COLORS = ["#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00"]
 
@@ -31,31 +31,12 @@ def get_templates():
     return []
 
 def single_user_action(templates):
-    if not templates:
-        return "No templates"
-
     setup_text, punchline_text = get_random_content()
     template = random.choice(templates)
 
     layers = [
-        {
-            "text": setup_text,
-            "size": random.randint(40, 60),
-            "color": random.choice(COLORS),
-            "opacity": 100,
-            "border_color_hex": "#000000",
-            "x_pos": random.randint(10, 50),
-            "y_pos": 20
-        },
-        {
-            "text": punchline_text,
-            "size": random.randint(45, 70),
-            "color": random.choice(COLORS),
-            "opacity": 100,
-            "border_color_hex": "#000000",
-            "x_pos": random.randint(10, 50),
-            "y_pos": 350
-        }
+        {"text": setup_text, "size": random.randint(40, 60), "color": random.choice(COLORS), "opacity": 100, "x_pos": random.randint(10, 50), "y_pos": 20},
+        {"text": punchline_text, "size": random.randint(45, 70), "color": random.choice(COLORS), "opacity": 100, "x_pos": random.randint(10, 50), "y_pos": 350}
     ]
 
     payload = {
@@ -67,34 +48,42 @@ def single_user_action(templates):
     try:
         start = time.time()
         res = requests.post(f"{LOCAL_API_URL}/memes", json=payload, timeout=10)
-        
         if res.status_code == 200:
-            task_id = res.json()['task_id']
-            return f"Task {task_id} sent (Time: {time.time() - start:.3f}s)"
-        else:
-            return f"Error: Status {res.status_code}"
+            return f"OK ({time.time() - start:.3f}s)"
+        return f"Error {res.status_code}"
     except Exception as e:
-        return f"Request Failed: {e}"
+        return f"Fail: {e}"
+
+def worker_thread(templates, stop_time):
+    results = []
+    while time.time() < stop_time:
+        res = single_user_action(templates)
+        results.append(res)
+        print(f"[{time.strftime('%H:%M:%S')}] {res}")
+    return results
 
 def main():
-    print(f"Starting STRESS TEST: {TOTAL_REQUESTS} requests, {CONCURRENT_USERS} threads.")
+    print(f"Starting test: {CONCURRENT_USERS} threads for {TEST_DURATION} seconds.")
     templates = get_templates()
     
     if not templates:
-        print("API not reachable or no templates found.")
+        print("API unreachable.")
         return
 
+    stop_time = time.time() + TEST_DURATION
     start_time = time.time()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONCURRENT_USERS) as executor:
-        futures = [executor.submit(single_user_action, templates) for _ in range(TOTAL_REQUESTS)]
-        
+        futures = [executor.submit(worker_thread, templates, stop_time) for _ in range(CONCURRENT_USERS)]
+        all_results = []
         for future in concurrent.futures.as_completed(futures):
-            print(future.result())
+            all_results.extend(future.result())
 
     duration = time.time() - start_time
-    print(f"\nTest Finished in {duration:.2f} seconds.")
-    print(f"RPS (Requests Per Second): {TOTAL_REQUESTS / duration:.2f}")
+    total_req = len(all_results)
+    print(f"\nTotal duration: {duration:.2f}s")
+    print(f"Requests: {total_req}")
+    print(f"Average RPS: {total_req / duration:.2f}")
 
 if __name__ == "__main__":
     main()
