@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = 'http://api.meme.local';
 
 let allTemplates = [];
 let displayedCount = 0;
