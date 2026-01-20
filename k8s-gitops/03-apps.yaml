@@ -17,7 +17,7 @@ spec:
         - name: regcred
       containers:
         - name: api
-          image: sterben007/meme-backend:43
+          image: sterben007/meme-backend:8063803
           imagePullPolicy: Always
           resources:
             requests:
@@ -65,7 +65,7 @@ spec:
         - name: regcred
       containers:
         - name: worker
-          image: sterben007/meme-worker:970f955
+          image: sterben007/meme-worker:8063803
           imagePullPolicy: Always
           envFrom:
             - secretRef:
@@ -92,7 +92,7 @@ spec:
         - name: regcred
       containers:
         - name: frontend
-          image: sterben007/meme-frontend:970f955
+          image: sterben007/meme-frontend:8063803
           imagePullPolicy: Always
           ports:
             - containerPort: 80
