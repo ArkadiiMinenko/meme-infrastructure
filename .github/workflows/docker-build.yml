@@ -63,7 +63,7 @@ jobs:
           sed -i "s|image: sterben007/meme-backend:.*|image: sterben007/meme-backend:${{ steps.vars.outputs.sha_short }}|g" k8s-gitops/03-apps.yaml
           sed -i "s|image: sterben007/meme-worker:.*|image: sterben007/meme-worker:${{ steps.vars.outputs.sha_short }}|g" k8s-gitops/03-apps.yaml
           git status
-          git pull origin main --no-edit
+          git pull origin master --no-edit
           git add k8s-gitops/03-apps.yaml
           git commit -m "Update Docker images tag to ${{ steps.vars.outputs.sha_short }}"
           git push
