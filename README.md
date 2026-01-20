@@ -94,10 +94,31 @@ Transitioning from infrastructure to a deployable, testable microservice system:
 
 ---
 
-## 🔮 Future Steps
-
-* [ ] Migrate Docker Compose services to Kubernetes Helm Charts.
-* [ ] Implement GitOps (ArgoCD) for continuous delivery.
-* [ ] Set up monitoring (Prometheus/Grafana).
-
 ---
+
+### 🚢 Step 5: Kubernetes Migration, CI/CD & GitOps
+**Stack:** GitHub Actions × ArgoCD × HPA × K8s Manifests
+
+The "Big Migration." Moving the application from local Docker Compose to a production-grade Kubernetes environment, establishing a full automated pipeline, and proving resilience via stress testing.
+
+#### 🧱 What Was Built
+* **CI/CD Pipeline:** GitHub Actions automatically builds and tags Docker images on every push to `master`, pushing them to Docker Hub.
+* **GitOps (ArgoCD):** The cluster state is synchronized with the Git repository. No manual `kubectl apply` for application logic.
+* **Autoscaling (HPA):** Configured HorizontalPodAutoscaler and metrics-server. The API scales from 1 to 5 pods based on CPU load.
+* **Storage Strategy:** Implemented `local-path-provisioner` storage class to allow StatefulSets (Postgres, MinIO, RabbitMQ) to bind to bare-metal disk storage.
+
+#### 🔥 Disaster Recovery (DR) Test
+To verify the robustness of the setup, a full Disaster Recovery simulation was performed:
+
+1.  **Action:** `kubectl delete namespace meme-app` (Total destruction of the environment).
+2.  **Recovery:** Re-applied infrastructure secrets (`regcred`, `app-secrets`) and StorageClasses manually.
+3.  **Result:** ArgoCD detected the missing state and automatically redeployed the entire stack. The system returned to full functionality within minutes.
+
+#### ⚠️ Challenges & Solutions
+| Issue | Symptom | Root Cause & Fix |
+|-------|---------|------------------|
+| **Pending PVCs** | DBs stuck in `Pending` state. | **Missing StorageClass.** Bare metal K8s doesn't have a default provisioner. <br>✅ Fixed by installing `rancher.io/local-path`. |
+| **CI/CD Failure** | GitHub Action failed on git push. | **Branch Mismatch.** Workflow tried pushing to `main`, repo used `master`. <br>✅ Fixed workflow config. |
+| **HPA Unknown** | HPA showed `<unknown>/50%`. | **TLS Error.** Metrics Server couldn't talk to Kubelet. <br>✅ Fixed by adding `--kubelet-insecure-tls`. |
+
+> **Key Takeaway:** Automation is great, but understanding the "manual" foundational layers (Secrets, Storage, Networking) is critical for recovery.
