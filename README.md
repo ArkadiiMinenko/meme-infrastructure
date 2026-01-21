@@ -120,3 +120,33 @@ To verify the robustness of the setup, a full Disaster Recovery simulation was p
 | **HPA Unknown** | HPA showed `<unknown>/50%`. | **TLS Error.** Metrics Server couldn't talk to Kubelet. <br>✅ Fixed by adding `--kubelet-insecure-tls`. |
 
 > **Key Takeaway:** Automation is great, but understanding the "manual" foundational layers (Secrets, Storage, Networking) is critical for recovery.
+
+---
+
+### 🛡️ Step 6: Observability, Guardrails & "Production-Grade" Stability
+**Stack:** Prometheus × Grafana × Loki × Alertmanager × Telegram
+
+The final boss: ensuring the cluster survives heavy load and tells me when it hurts. Transitioning from "it works" to "it stays up."
+
+#### 🧱 What Was Built
+* **PLG Stack (Prometheus, Loki, Grafana):** Full visibility into metrics and logs. No more grepping `kubectl logs` across multiple pods.
+* **Alerting Pipeline:** Configured Alertmanager to send critical notifications (High CPU, CrashLoops, Log Errors) directly to Telegram.
+* **Resource Guardrails:** Implemented strict `requests` and `limits` for all microservices. A rogue pod gets throttled (0.1 CPU cap), preventing it from starving the Node.
+* **Probes Tuning:** Optimized `liveness` and `readiness` probes to handle slow startups under strict CPU throttling without triggering false-positive restarts.
+
+#### 🔥 The Survival Test (Load Testing)
+I ran a custom Python DDoS script generating concurrent traffic to the API (20+ concurrent users).
+
+**Outcome:**
+1.  **Scaling:** HPA detected the spike and scaled API replicas from **1 → 15**.
+2.  **Stability:** Resource Limits held firm. The API slowed down, but the Nodes remained **Ready**.
+3.  **Resilience:** Critical Services (Postgres, RabbitMQ, MinIO) experienced **0 restarts** and **0 downtime**.
+4.  **Observability:** Grafana fired alerts to Telegram instantly. Once load stopped, the cluster scaled back down.
+
+#### ⚠️ Challenges & Solutions
+| Issue | Symptom | Root Cause & Fix |
+|-------|---------|------------------|
+| **Node Death** | Nodes went `NotReady`, SSH died during load test. | **Resource Exhaustion.** No limits set. <br>✅ Fixed by implementing strict `resources: limits` in Helm/Kustomize. |
+| **Death Spiral** | Pods stuck in `CrashLoopBackOff` under load. | **Probe Timeout.** 0.1 CPU limit made startup slow (>10s). <br>✅ Fixed by increasing `initialDelaySeconds` to 60s. |
+
+> **Key Takeaway:** Observability isn't just looking at graphs; it's about trusting the system to heal itself under pressure without human intervention.
