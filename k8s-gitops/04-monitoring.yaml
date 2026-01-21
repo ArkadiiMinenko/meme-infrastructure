@@ -18,6 +18,12 @@ spec:
       parameters:
         - name: grafana.enabled
           value: "true"
+        - name: grafana.persistence.enabled
+          value: "true"
+        - name: grafana.persistence.size
+          value: "5Gi"
+        - name: grafana.persistence.type
+          value: "pvc"
         - name: grafana.service.type
           value: "NodePort"
         - name: grafana.service.nodePort
