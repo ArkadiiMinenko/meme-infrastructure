@@ -117,7 +117,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: meme.local
+    - host: meme.192.168.0.220.nip.io
       http:
         paths:
           - path: /
@@ -127,7 +127,7 @@ spec:
                 name: meme-frontend
                 port:
                   number: 80
-    - host: api.meme.local
+    - host: api.192.168.0.220.nip.io
       http:
         paths:
           - path: /

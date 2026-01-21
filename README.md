@@ -94,8 +94,6 @@ Transitioning from infrastructure to a deployable, testable microservice system:
 
 ---
 
----
-
 ### 🚢 Step 5: Kubernetes Migration, CI/CD & GitOps
 **Stack:** GitHub Actions × ArgoCD × HPA × K8s Manifests
 
