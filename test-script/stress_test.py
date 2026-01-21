@@ -3,11 +3,11 @@ import random
 import concurrent.futures
 import time
 
-LOCAL_API_URL = "http://api.meme.local"
+LOCAL_API_URL = "http://api.192.168.0.220.nip.io"
 EXTERNAL_API_URL = "https://official-joke-api.appspot.com/random_joke"
 
-CONCURRENT_USERS = 20
-TEST_DURATION = 300
+CONCURRENT_USERS = 13
+TEST_DURATION = 600
 
 COLORS = ["#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00"]
 
