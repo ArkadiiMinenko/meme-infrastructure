@@ -110,13 +110,13 @@ spec:
             - containerPort: 80
           livenessProbe:
             httpGet:
-              path: /
+              path: /docs
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /
+              path: /docs
               port: 80
             initialDelaySeconds: 2
             periodSeconds: 5
@@ -193,7 +193,7 @@ spec:
     kind: Deployment
     name: meme-api
   minReplicas: 1
-  maxReplicas: 5
+  maxReplicas: 15
   metrics:
   - type: Resource
     resource:
