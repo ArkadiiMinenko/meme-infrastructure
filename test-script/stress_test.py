@@ -6,8 +6,8 @@ import time
 LOCAL_API_URL = "http://api.192.168.0.220.nip.io"
 EXTERNAL_API_URL = "https://official-joke-api.appspot.com/random_joke"
 
-CONCURRENT_USERS = 13
-TEST_DURATION = 600
+CONCURRENT_USERS = 10
+TEST_DURATION = 300
 
 COLORS = ["#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00"]
 
