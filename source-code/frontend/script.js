@@ -1,4 +1,4 @@
-const API_URL = 'http://meme.192.168.0.220.nip.io';
+const API_URL = 'http://api.192.168.0.220.nip.io';
 
 let allTemplates = [];
 let displayedCount = 0;
