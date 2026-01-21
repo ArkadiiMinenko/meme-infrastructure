@@ -24,6 +24,12 @@ spec:
           value: "32000"
         - name: promtail.enabled
           value: "true"
+        - name: prometheus.enabled
+          value: "true"
+        - name: prometheus.alertmanager.persistentVolume.enabled
+          value: "false"
+        - name: prometheus.server.persistentVolume.enabled
+          value: "false"
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
