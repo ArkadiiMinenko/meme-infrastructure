@@ -21,10 +21,10 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: "50m"
+              cpu: "150m"
               memory: "64Mi"
             limits:
-              cpu: "100m"
+              cpu: "300m"
               memory: "128Mi"
           ports:
             - containerPort: 8000
@@ -81,7 +81,7 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              cpu: "100m"
+              cpu: "150m"
               memory: "128Mi"
             limits:
               cpu: "300m"
@@ -200,7 +200,7 @@ spec:
     kind: Deployment
     name: meme-api
   minReplicas: 1
-  maxReplicas: 15
+  maxReplicas: 17
   metrics:
   - type: Resource
     resource:
